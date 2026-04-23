@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Helper Functions ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Check if the user exists in our database
+    function isKnownUser() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin') || 
+        request.auth.token.email == 'ckaye379@gmail.com'
+      );
+    }
+
+    // --- Access Rules ---
+
+    // Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection Test Path
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      // Individual Profile Access
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      
+      // Collection Listing (Admins only)
+      allow list: if isAdmin();
+      
+      // Profile Creation (New users creating their own profile)
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      
+      // Updates (Owner or Admin)
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      
+      // Deletion (Admins only)
+      allow delete: if isAdmin();
+    }
+
+    // Student Records Collection
+    match /students/{studentId} {
+      // READ: Allowed if the user is an admin OR they created the specific record
+      // Query filter (createdBy == uid) is automatically validated by the rule engine
+      allow read: if isSignedIn() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      
+      // CREATE: User must exist in the database and claim ownership of the record
+      allow create: if isKnownUser() && request.resource.data.createdBy == request.auth.uid;
+      
+      // UPDATE/DELETE: User must be owner OR admin
+      allow update, delete: if isKnownUser() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+    }
+  }
+}

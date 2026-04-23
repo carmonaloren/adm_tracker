@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "StudentRecord": {
+      "title": "Student Record",
+      "description": "Details of a student enrolled in ADM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "district": { "type": "string" },
+        "school": { "type": "string" },
+        "studentName": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female"] },
+        "grade": { "type": "string" },
+        "reasonForADM": { "type": "string" },
+        "academicStatus": { "type": "string" },
+        "duration": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["id", "district", "school", "studentName", "gender", "grade", "reasonForADM", "academicStatus", "duration", "startDate", "endDate", "createdAt", "createdBy"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Information about a registered user",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "district": { "type": "string" },
+        "school": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid", "fullName", "email", "district", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "StudentRecord",
+      "description": "ADM Student collection"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles collection"
+    }
+  }
+}
